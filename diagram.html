@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Job Pipeline Diagram (Mermaid)</title>
+
+  <style>
+    :root{
+      --bg: #0b1220;
+      --card: rgba(255,255,255,0.06);
+      --text: #e6edf3;
+      --muted: #9fb0c0;
+      --border: rgba(255,255,255,0.12);
+    }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 700px at 20% 10%, #1b2a4a 0%, rgba(27,42,74,0) 60%),
+                  radial-gradient(900px 600px at 80% 30%, #2a164a 0%, rgba(42,22,74,0) 55%),
+                  var(--bg);
+      color: var(--text);
+    }
+    header{
+      padding: 28px 18px 10px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1{
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      letter-spacing: 0.2px;
+    }
+    p{
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .wrap{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 14px 18px 34px;
+    }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      overflow: auto;
+    }
+    .toolbar{
+      display:flex;
+      gap:10px;
+      justify-content: space-between;
+      align-items:center;
+      margin: 12px 0 10px;
+    }
+    .btns{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    button{
+      appearance:none;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    button:hover{
+      background: rgba(255,255,255,0.12);
+    }
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color: #c6d4ff;
+    }
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .mermaid{
+      min-width: 900px; /* helps avoid cramped layouts */
+    }
+  </style>
+
+  <!-- Mermaid (CDN) -->
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "dark",
+      securityLevel: "strict",
+      flowchart: { curve: "basis" },
+    });
+
+    window.downloadSVG = async () => {
+      const el = document.querySelector(".mermaid");
+      const svg = el?.querySelector("svg");
+      if (!svg) return alert("SVG not ready yet. Refresh and try again.");
+      const blob = new Blob([svg.outerHTML], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "job-pipeline-diagram.svg";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    window.copyMermaid = async () => {
+      const txt = document.getElementById("mmd").textContent.trim();
+      await navigator.clipboard.writeText(txt);
+      alert("Mermaid code copied!");
+    };
+  </script>
+</head>
+
+<body>
+  <header>
+    <h1>Job Scraping + Enrichment Pipeline</h1>
+    <p>Mermaid-rendered architecture diagram. Use the buttons to copy the Mermaid source or download as SVG.</p>
+  </header>
+
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="btns">
+        <button onclick="copyMermaid()">Copy Mermaid</button>
+        <button onclick="downloadSVG()">Download SVG</button>
+      </div>
+      <div class="hint">Tip: Open this file in any browser. No build step.</div>
+    </div>
+
+    <div class="card">
+      <div class="mermaid">
+flowchart TD
+
+    %% =========================
+    %% 1. Input & Discovery
+    %% =========================
+    subgraph D1["1. Input & Discovery"]
+        A([User Query]):::input --> B{Search Orchestrator}
+
+        B -->|Primary| C[DuckDuckGo Search]:::engine
+        B -->|Fallback| D[Google Search]:::engine
+        B -->|Direct| E[Ashby GraphQL API]:::engine
+    end
+
+    %% =========================
+    %% 2. Core Processing
+    %% =========================
+    subgraph D2["2. Core Processing"]
+        C --> F[URL Deduplication]
+        D --> F
+        E --> F
+
+        F --> G[Job Scraper]:::engine
+        G --> H{Platform Router}
+
+        H -->|jobs.lever.co| I[Lever Parser]
+        H -->|jobs.ashbyhq.com| J[Ashby Parser]
+        H -->|boards.greenhouse.io| K[Greenhouse Parser]
+        H -->|smartrecruiters.com| L[SmartRecruiters Parser]
+    end
+
+    %% =========================
+    %% 3. Data Enrichment
+    %% =========================
+    subgraph D3["3. Data Enrichment"]
+        I --> M[Job Validator]
+        J --> M
+        K --> M
+        L --> M
+
+        M -->|Valid| N[Company URL Extractor]
+        N --> O[Contact Scraper]:::engine
+        O -->|Finds| P[HR Emails & LinkedIn]
+    end
+
+    %% =========================
+    %% 4. Storage & Output
+    %% =========================
+    subgraph D4["4. Storage & Output"]
+        P --> Q[Data Processor]
+
+        Q -->|Read / Write| R[(Master CSV)]:::storage
+        Q -->|Write New| S[(Delta CSV)]:::storage
+
+        S --> T[Webhook Dispatcher]:::output
+        T --> U((n8n / External Systems)):::output
+    end
+
+    %% =========================
+    %% Styling
+    %% =========================
+    classDef input fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px;
+    classDef engine fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px;
+    classDef storage fill:#FFF3E0,stroke:#EF6C00,stroke-width:2px;
+    classDef output fill:#F3E5F5,stroke:#6A1B9A,stroke-width:2px;
+      </div>
+    </div>
+
+    <!-- Hidden Mermaid code block for copying -->
+    <pre id="mmd" style="display:none;">
+flowchart TD
+
+    subgraph D1["1. Input & Discovery"]
+        A([User Query]):::input --> B{Search Orchestrator}
+        B -->|Primary| C[DuckDuckGo Search]:::engine
+        B -->|Fallback| D[Google Search]:::engine
+        B -->|Direct| E[Ashby GraphQL API]:::engine
+    end
+
+    subgraph D2["2. Core Processing"]
+        C --> F[URL Deduplication]
+        D --> F
+        E --> F
+
+        F --> G[Job Scraper]:::engine
+        G --> H{Platform Router}
+
+        H -->|jobs.lever.co| I[Lever Parser]
+        H -->|jobs.ashbyhq.com| J[Ashby Parser]
+        H -->|boards.greenhouse.io| K[Greenhouse Parser]
+        H -->|smartrecruiters.com| L[SmartRecruiters Parser]
+    end
+
+    subgraph D3["3. Data Enrichment"]
+        I --> M[Job Validator]
+        J --> M
+        K --> M
+        L --> M
+
+        M -->|Valid| N[Company URL Extractor]
+        N --> O[Contact Scraper]:::engine
+        O -->|Finds| P[HR Emails & LinkedIn]
+    end
+
+    subgraph D4["4. Storage & Output"]
+        P --> Q[Data Processor]
+        Q -->|Read / Write| R[(Master CSV)]:::storage
+        Q -->|Write New| S[(Delta CSV)]:::storage
+        S --> T[Webhook Dispatcher]:::output
+        T --> U((n8n / External Systems)):::output
+    end
+
+    classDef input fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px;
+    classDef engine fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px;
+    classDef storage fill:#FFF3E0,stroke:#EF6C00,stroke-width:2px;
+    classDef output fill:#F3E5F5,stroke:#6A1B9A,stroke-width:2px;
+    </pre>
+  </div>
+</body>
+</html>
